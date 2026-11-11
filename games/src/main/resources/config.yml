@@ -1,0 +1,688 @@
+# LettuceGames config. /lg reload after editing.
+
+# Parties are switched off for now: everyone on the Games server is one group,
+# anyone can change settings, and the game starts when everyone's ready.
+parties-enabled: false
+
+# Parties off: the first person to ready up starts this countdown, and whoever's ready when it hits 0 plays.
+# Drops to 5 seconds once everyone on the server is ready.
+ready-countdown-seconds: 60
+
+# How many maps to keep generated and waiting. Each is used once then deleted.
+# A new one starts generating in the background the moment a game takes one.
+ready-maps: 2
+# How much of each ready map gets pre-generated, and how fast. Lower = lighter on the server.
+# Chunks are requested this many per tick (every other tick while a game is running).
+ready-map-preload-blocks: 96
+ready-map-chunks-per-tick: 1
+
+# Most games that can run at once. Each game is its own world, so this is mostly about RAM/CPU.
+max-games: 4
+
+# Fewest players a party needs to start (admins can /p start below this for testing)
+min-players: 2
+
+# Seconds of "5, 4, 3..." once everyone's ready (parties on)
+start-countdown-seconds: 5
+
+# Seconds to stay in the finished game before everyone goes back to the waiting area
+end-delay-seconds: 10
+
+# Game worlds are named <prefix><id> and deleted when the game ends (and on startup if left over)
+world-prefix: "lg_"
+
+# Keep the waiting area at noon with no rain
+lobby-always-day: true
+
+party:
+  invite-expire-seconds: 60
+
+# Set with /lg setlobby (defaults to the main world spawn)
+lobby:
+  world: ""
+
+# How eliminated players spectate at first. They can switch any time with /specmode.
+#   spectator = real spectator mode (noclip, see through players' eyes)
+#   ghost     = invisible creative-style flying, double-tap jump to fly/walk
+spectator-default: ghost
+# Walk/fly spectators still show in the tab list (gray [Spec]). They stay invisible, silent and nametag-less
+# to players, and arrows/mobs ignore them. false = fully hide them from players (they drop out of tab).
+spectator-tablist: true
+
+# Pre-generate this many blocks around spawn before anyone teleports in (128 = 17x17 chunks)
+preload-radius-blocks: 128
+# Start anyway if pre-generating takes longer than this
+preload-timeout-seconds: 60
+
+# Border and zone speeds. Each side of the border moves this many blocks per second (walking is ~4.3, sprinting ~5.6).
+# Lower = slower, more time to run. The shrink time is worked out from the distance.
+border:
+  normal-speed: 1.5
+  rush-speed: 2.5
+zones:
+  wait-seconds: 45
+  shrink-speed: 1.5
+
+item-pool:
+  # Chance a drop (after the first) is a splash potion instead of an item
+  potion-chance: 0.08
+  # Never more than this many drops in a row without a weapon or armor (0 = off)
+  gear-pity: 2
+  # Which splash potions can show up (no night vision, water breathing, luck and other junk)
+  potions: [HEALING, STRONG_HEALING, HARMING, STRONG_HARMING, REGENERATION, STRONG_REGENERATION,
+            STRENGTH, STRONG_STRENGTH, SWIFTNESS, STRONG_SWIFTNESS, POISON, STRONG_POISON,
+            SLOWNESS, STRONG_SLOWNESS, WEAKNESS, INVISIBILITY, FIRE_RESISTANCE, TURTLE_MASTER, LEAPING, SLOW_FALLING]
+  # Edible items only show up when the "Eating Gives a Random Effect" twist is on.
+  # List anything here that should show up anyway (like GOLDEN_APPLE).
+  edible-exceptions:
+  - GOLDEN_APPLE
+  - ENCHANTED_GOLDEN_APPLE
+  # Every drop picks a group by weight, then an item from that group.
+  # The first drop of a game only uses blocks and utility.
+  # "requires" groups only count when that setting is on: crafting, eat-effect, spawn-eggs
+  # "stack-size" caps how many of an item come per stack
+  # A drop is one random item: gear is a single piece, blocks come as Drop Size full stacks. Items written ITEM:amount
+  # (TNT:64) always come as one stack of exactly that many, for things you do not want 3 stacks of.
+  groups:
+    blocks:
+      weight: 20
+      items:
+      - COBBLESTONE
+      - STONE
+      - ANDESITE
+      - TUFF
+      - BLACKSTONE
+      - STONE_BRICKS
+      - DEEPSLATE
+      - COBBLED_DEEPSLATE
+      - DEEPSLATE_BRICKS
+      - MUD_BRICKS
+      - BRICKS
+      - TERRACOTTA
+      - OAK_PLANKS
+      - SPRUCE_PLANKS
+      - OAK_LOG
+      - GLASS
+      - SAND
+      - GRAVEL
+      - SANDSTONE
+      - NETHERRACK
+      - END_STONE
+      - OBSIDIAN:64
+      - SCAFFOLDING
+      - LADDER
+      - IRON_BARS
+      - OAK_TRAPDOOR
+      - OAK_DOOR
+      - COBBLESTONE_STAIRS
+      - WHITE_WOOL
+      - WHITE_CONCRETE_POWDER
+      - SLIME_BLOCK
+      - HONEY_BLOCK
+      - HAY_BLOCK
+      - SOUL_SAND
+      - MAGMA_BLOCK:64
+      - ICE
+      - PACKED_ICE
+      - BLUE_ICE
+      - SNOW_BLOCK
+      - ANVIL:16
+      - POINTED_DRIPSTONE:64
+      - DRIPSTONE_BLOCK
+      - CAMPFIRE:16
+      - PISTON:32
+      - STICKY_PISTON:32
+      - CHEST:16
+    utility:
+      weight: 24
+      items:
+      - WATER_BUCKET
+      - LAVA_BUCKET
+      - BUCKET
+      - POWDER_SNOW_BUCKET
+      - MILK_BUCKET
+      - ENDER_PEARL:16
+      - WIND_CHARGE:64
+      - FLINT_AND_STEEL
+      - FIRE_CHARGE:64
+      - SNOWBALL:16
+      - TNT:64
+      - COBWEB:64
+      - FIREWORK_ROCKET:64
+      - ELYTRA
+      - FISHING_ROD
+      - OAK_BOAT
+      - SHEARS
+      - RESPAWN_ANCHOR:16
+      - GLOWSTONE:64
+    weapons:
+      weight: 38
+      items:
+      - STONE_SWORD
+      - IRON_SWORD
+      - GOLDEN_SWORD
+      - DIAMOND_SWORD
+      - COPPER_SWORD
+      - WOODEN_SWORD
+      - WOODEN_AXE
+      - STONE_AXE
+      - IRON_AXE
+      - GOLDEN_AXE
+      - DIAMOND_AXE
+      - COPPER_AXE
+      - STONE_PICKAXE
+      - IRON_PICKAXE
+      - DIAMOND_PICKAXE
+      - LEATHER_HELMET
+      - LEATHER_CHESTPLATE
+      - LEATHER_LEGGINGS
+      - LEATHER_BOOTS
+      - CHAINMAIL_HELMET
+      - CHAINMAIL_CHESTPLATE
+      - CHAINMAIL_LEGGINGS
+      - CHAINMAIL_BOOTS
+      - COPPER_HELMET
+      - COPPER_CHESTPLATE
+      - COPPER_LEGGINGS
+      - COPPER_BOOTS
+      - IRON_HELMET
+      - IRON_CHESTPLATE
+      - IRON_LEGGINGS
+      - IRON_BOOTS
+      - GOLDEN_HELMET
+      - GOLDEN_CHESTPLATE
+      - GOLDEN_LEGGINGS
+      - GOLDEN_BOOTS
+      - DIAMOND_HELMET
+      - DIAMOND_CHESTPLATE
+      - DIAMOND_LEGGINGS
+      - DIAMOND_BOOTS
+      - TURTLE_HELMET
+      - BOW
+      - CROSSBOW
+      - TRIDENT
+      - SHIELD
+      - ARROW:64
+      - SPECTRAL_ARROW:32
+    better:
+      weight: 10
+      items:
+      - NETHERITE_SWORD
+      - NETHERITE_AXE
+      - NETHERITE_HELMET
+      - NETHERITE_CHESTPLATE
+      - NETHERITE_LEGGINGS
+      - NETHERITE_BOOTS
+      - MACE
+      - TOTEM_OF_UNDYING
+      - END_CRYSTAL:8
+      - TNT_MINECART
+      - GOLDEN_APPLE:8
+      - ENCHANTED_GOLDEN_APPLE:4
+    eggs:
+      weight: 4
+      requires: spawn-eggs
+      stack-size: 16
+      items: [ZOMBIE_SPAWN_EGG, SKELETON_SPAWN_EGG, CREEPER_SPAWN_EGG, SPIDER_SPAWN_EGG, CAVE_SPIDER_SPAWN_EGG,
+              BLAZE_SPAWN_EGG, WITCH_SPAWN_EGG, IRON_GOLEM_SPAWN_EGG, PHANTOM_SPAWN_EGG, EVOKER_SPAWN_EGG,
+              VINDICATOR_SPAWN_EGG, PILLAGER_SPAWN_EGG, RAVAGER_SPAWN_EGG, HOGLIN_SPAWN_EGG, PIGLIN_BRUTE_SPAWN_EGG,
+              SLIME_SPAWN_EGG, MAGMA_CUBE_SPAWN_EGG, GHAST_SPAWN_EGG, BREEZE_SPAWN_EGG, BOGGED_SPAWN_EGG,
+              STRAY_SPAWN_EGG, HUSK_SPAWN_EGG, BEE_SPAWN_EGG, GOAT_SPAWN_EGG,
+              WITHER_SKELETON_SPAWN_EGG, GUARDIAN_SPAWN_EGG, DROWNED_SPAWN_EGG,
+              HORSE_SPAWN_EGG, WARDEN_SPAWN_EGG]
+    materials:
+      weight: 3
+      requires: crafting
+      stack-size: 8
+      items: [IRON_INGOT, DIAMOND, NETHERITE_INGOT, CRAFTING_TABLE]
+    food:
+      weight: 12
+      requires: eat-effect
+      items: [COOKED_BEEF, COOKED_PORKCHOP, COOKED_CHICKEN, COOKED_MUTTON, BREAD, BAKED_POTATO, GOLDEN_CARROT, GOLDEN_APPLE,
+              APPLE, PUMPKIN_PIE, COOKIE, MELON_SLICE, SWEET_BERRIES, GLOW_BERRIES, DRIED_KELP, HONEY_BOTTLE, CHORUS_FRUIT,
+              ROTTEN_FLESH, SPIDER_EYE, PUFFERFISH, POISONOUS_POTATO]
+
+# ---------------------------------------------------------------- Death Swap
+deathswap:
+  # Dying this many seconds after a swap credits the kill to whoever's spot you landed in
+  trap-credit-seconds: 20
+  # How far from the middle each player spawns (they're spread evenly on a ring this far out).
+  # 100 = about 200 blocks apart with 2 players, about 140 with 4.
+  spread-distance: 100
+  # Most ores Vein Miner breaks at once
+  vein-miner-max: 64
+
+# OP Loot table for the OP Loot twists (Death Swap, Manhunt, Hitman). One random line per drop.
+# Format: ITEM amount weight [enchanted]   (enchanted = 2-4 max level enchants)
+op-loot:
+  - ENCHANTED_GOLDEN_APPLE 1 3
+  - GOLDEN_APPLE 4 8
+  - TOTEM_OF_UNDYING 1 4
+  - DIAMOND_SWORD 1 6 enchanted
+  - DIAMOND_AXE 1 4 enchanted
+  - DIAMOND_PICKAXE 1 5 enchanted
+  - DIAMOND_HELMET 1 4 enchanted
+  - DIAMOND_CHESTPLATE 1 4 enchanted
+  - DIAMOND_LEGGINGS 1 4 enchanted
+  - DIAMOND_BOOTS 1 4 enchanted
+  - NETHERITE_SWORD 1 2 enchanted
+  - NETHERITE_CHESTPLATE 1 1 enchanted
+  - BOW 1 4 enchanted
+  - CROSSBOW 1 3 enchanted
+  - TRIDENT 1 2 enchanted
+  - SHIELD 1 3
+  - MACE 1 1
+  - ELYTRA 1 2
+  - ENDER_PEARL 8 8
+  - WIND_CHARGE 16 4
+  - FIREWORK_ROCKET 16 3
+  - DIAMOND 8 6
+  - NETHERITE_INGOT 2 2
+  - IRON_INGOT 32 6
+  - OBSIDIAN 16 5
+  - FLINT_AND_STEEL 1 4
+  - TNT 16 5
+  - LAVA_BUCKET 1 6
+  - WATER_BUCKET 1 6
+  - POWDER_SNOW_BUCKET 1 3
+  - COBWEB 16 5
+  - POINTED_DRIPSTONE 16 3
+  - MAGMA_BLOCK 16 3
+  - SAND 64 3
+  - ANVIL 1 2
+  - END_CRYSTAL 4 2
+  - RESPAWN_ANCHOR 2 2
+  - GLOWSTONE 8 2
+  - SCAFFOLDING 32 4
+  - ARROW 64 4
+  - EXPERIENCE_BOTTLE 32 3
+  - ENCHANTING_TABLE 1 2
+  - BOOKSHELF 16 2
+  - LAPIS_LAZULI 32 2
+
+# ---------------------------------------------------------------- Manhunt / Hitman
+hunt:
+  # Everyone is frozen this long at the start of Manhunt, then the runner head start begins
+  start-freeze-seconds: 5
+  # How many OP loot rolls drop when "Hunters/Runners Drop OP Loot" is on
+  op-loot-on-death: 3
+hitman:
+  # How far out the hitmen ring spawns around the survivors (blocks)
+  ring-distance: 40
+
+# ---------------------------------------------------------------- Structure Mania twist
+structure-mania:
+  # Vanilla structure ids it picks from (anything /place structure takes). Big ones like mansion
+  # and ancient_city are left out on purpose, they lag.
+  structures: [village_plains, village_desert, village_savanna, village_snowy, village_taiga, desert_pyramid,
+               jungle_pyramid, igloo, swamp_hut, pillager_outpost, shipwreck, ruined_portal, ocean_ruin_warm,
+               ocean_ruin_cold, trail_ruins, nether_fossil, bastion_remnant, fortress, end_city]
+
+# ---------------------------------------------------------------- Death Shuffle
+death-shuffle:
+  # Deaths that need a certain biome or structure (berry bushes, cactus, villages...) only get handed out
+  # if one is within this many blocks of you
+  max-distance: 600
+
+# ---------------------------------------------------------------- Bingo
+bingo:
+  # The task pool. Each card picks from this list. Format:
+  #   TYPE KEY [flags] | What it says on the card
+  # TYPE: ITEM (have it), KILL (mob), EAT, DIE (a Death Shuffle death), ADV (advancement), BIOME, OPP (opponent), LEVEL
+  # flags: nether (only with the nether on), biome (only with Biome Tasks on), fam=x (only one per family per card),
+  #        cat=enchant (max 1 per card), icon=MATERIAL
+  # Limits per card: 4 EAT, 4 DIE, 3 OPP, 1 enchant, and at least one DIE. Bad names are skipped.
+  tasks:
+    - "ITEM DIAMOND_BLOCK | Craft a Diamond Block"
+    - "ITEM GOLDEN_APPLE | Craft a Golden Apple"
+    - "ITEM IRON_BLOCK"
+    - "ITEM GOLD_BLOCK"
+    - "ITEM LAPIS_BLOCK"
+    - "ITEM REDSTONE_BLOCK"
+    - "ITEM COAL_BLOCK"
+    - "ITEM COPPER_BLOCK"
+    - "ITEM EMERALD"
+    - "ITEM AMETHYST_SHARD"
+    - "ITEM ENDER_PEARL"
+    - "ITEM OBSIDIAN"
+    - "ITEM DIAMOND_PICKAXE"
+    - "ITEM DIAMOND_SWORD"
+    - "ITEM DIAMOND_HOE | Craft a Diamond Hoe"
+    - "ITEM GOLDEN_HELMET fam=goldarmor"
+    - "ITEM GOLDEN_BOOTS fam=goldarmor"
+    - "ITEM IRON_CHESTPLATE"
+    - "ITEM SHIELD"
+    - "ITEM CROSSBOW"
+    - "ITEM TNT"
+    - "ITEM COMPASS"
+    - "ITEM CLOCK"
+    - "ITEM SPYGLASS"
+    - "ITEM MAP"
+    - "ITEM LEAD"
+    - "ITEM NAME_TAG"
+    - "ITEM SADDLE"
+    - "ITEM BOOKSHELF"
+    - "ITEM ENCHANTING_TABLE"
+    - "ITEM ANVIL"
+    - "ITEM JUKEBOX"
+    - "ITEM NOTE_BLOCK"
+    - "ITEM PISTON"
+    - "ITEM STICKY_PISTON"
+    - "ITEM OBSERVER"
+    - "ITEM REPEATER"
+    - "ITEM COMPARATOR"
+    - "ITEM HOPPER"
+    - "ITEM DROPPER"
+    - "ITEM DISPENSER"
+    - "ITEM LANTERN"
+    - "ITEM CAMPFIRE"
+    - "ITEM CAKE"
+    - "ITEM PUMPKIN_PIE"
+    - "ITEM COOKIE"
+    - "ITEM MUSHROOM_STEW"
+    - "ITEM RABBIT_STEW"
+    - "ITEM SUSPICIOUS_STEW"
+    - "ITEM HONEY_BOTTLE"
+    - "ITEM HONEYCOMB"
+    - "ITEM SLIME_BLOCK"
+    - "ITEM BAMBOO"
+    - "ITEM SWEET_BERRIES"
+    - "ITEM GLOW_BERRIES"
+    - "ITEM COCOA_BEANS"
+    - "ITEM JACK_O_LANTERN"
+    - "ITEM HAY_BLOCK"
+    - "ITEM ARMADILLO_SCUTE"
+    - "ITEM BRUSH"
+    - "ITEM GLOW_INK_SAC"
+    - "ITEM MOSS_BLOCK"
+    - "ITEM POINTED_DRIPSTONE"
+    - "ITEM FLOWERING_AZALEA"
+    - "ITEM CALCITE"
+    - "ITEM MUD_BRICKS"
+    - "ITEM TINTED_GLASS"
+    - "ITEM LIME_DYE fam=dye"
+    - "ITEM PURPLE_DYE fam=dye"
+    - "ITEM CYAN_DYE fam=dye"
+    - "ITEM MAGENTA_DYE fam=dye"
+    - "ITEM PINK_DYE fam=dye"
+    - "ITEM BLUE_DYE fam=dye"
+    - "ITEM LIGHT_BLUE_DYE fam=dye"
+    - "ITEM PINK_WOOL fam=wool"
+    - "ITEM PURPLE_WOOL fam=wool"
+    - "ITEM LIME_WOOL fam=wool"
+    - "ITEM CYAN_WOOL fam=wool"
+    - "ITEM BROWN_WOOL fam=wool"
+    - "ITEM RED_CONCRETE fam=concrete"
+    - "ITEM BLUE_CONCRETE fam=concrete"
+    - "ITEM GREEN_CONCRETE fam=concrete"
+    - "ITEM YELLOW_GLAZED_TERRACOTTA fam=glazed"
+    - "ITEM MAGENTA_GLAZED_TERRACOTTA fam=glazed"
+    - "ITEM LIGHT_BLUE_GLAZED_TERRACOTTA fam=glazed"
+    - "ITEM TERRACOTTA"
+    - "ITEM BRICKS"
+    - "ITEM MOSSY_STONE_BRICKS"
+    - "ITEM CHISELED_STONE_BRICKS"
+    - "ITEM SMOOTH_STONE"
+    - "ITEM POLISHED_ANDESITE"
+    - "ITEM POLISHED_DEEPSLATE"
+    - "ITEM POWDER_SNOW_BUCKET fam=bucket"
+    - "ITEM AXOLOTL_BUCKET fam=bucket"
+    - "ITEM TROPICAL_FISH_BUCKET fam=bucket"
+    - "ITEM PUFFERFISH_BUCKET fam=bucket"
+    - "ITEM MILK_BUCKET"
+    - "ITEM GUNPOWDER"
+    - "ITEM SPIDER_EYE"
+    - "ITEM RABBIT_FOOT"
+    - "ITEM BONE_BLOCK"
+    - "ITEM PHANTOM_MEMBRANE"
+    - "ITEM WRITABLE_BOOK"
+    - "ITEM ITEM_FRAME"
+    - "ITEM GLOW_ITEM_FRAME"
+    - "ITEM PAINTING"
+    - "ITEM ARMOR_STAND"
+    - "ITEM FLOWER_POT"
+    - "ITEM DECORATED_POT"
+    - "ITEM CHISELED_BOOKSHELF"
+    - "ITEM LECTERN"
+    - "ITEM COMPOSTER"
+    - "ITEM BARREL"
+    - "ITEM SMOKER"
+    - "ITEM BLAST_FURNACE"
+    - "ITEM LOOM"
+    - "ITEM CARTOGRAPHY_TABLE"
+    - "ITEM FLETCHING_TABLE"
+    - "ITEM SMITHING_TABLE"
+    - "ITEM GRINDSTONE"
+    - "ITEM STONECUTTER"
+    - "ITEM BELL"
+    - "ITEM CANDLE"
+    - "ITEM FISHING_ROD"
+    - "ITEM CARROT_ON_A_STICK"
+    - "ITEM SHEARS"
+    - "ITEM POWERED_RAIL"
+    - "ITEM DETECTOR_RAIL"
+    - "ITEM ACTIVATOR_RAIL"
+    - "ITEM CHEST_MINECART"
+    - "ITEM HOPPER_MINECART"
+    - "ITEM TNT_MINECART"
+    - "ITEM LIGHTNING_ROD"
+    - "ITEM TARGET"
+    - "ITEM HONEY_BLOCK"
+    - "ITEM BEEHIVE"
+    - "ITEM SCAFFOLDING"
+    - "ITEM DRIED_KELP_BLOCK"
+    - "ITEM SEA_PICKLE"
+    - "ITEM SNOW_BLOCK"
+    - "ITEM GOLDEN_CARROT"
+    - "ITEM GLISTERING_MELON_SLICE"
+    - "ITEM FERMENTED_SPIDER_EYE"
+    - "ITEM ENCHANTED_BOOK cat=enchant | Get an Enchanted Book"
+    - "ITEM EXPERIENCE_BOTTLE"
+    - "ITEM BLAZE_ROD nether"
+    - "ITEM GHAST_TEAR nether"
+    - "ITEM MAGMA_CREAM nether"
+    - "ITEM QUARTZ nether"
+    - "ITEM GLOWSTONE_DUST nether"
+    - "ITEM NETHER_WART nether"
+    - "ITEM CRYING_OBSIDIAN"
+    - "ITEM ENDER_EYE nether"
+    - "ITEM SPECTRAL_ARROW nether"
+    - "ITEM SOUL_LANTERN nether"
+    - "ITEM SOUL_CAMPFIRE nether"
+    - "ITEM DAYLIGHT_DETECTOR nether"
+    - "ITEM FIRE_CHARGE nether"
+    - "ITEM NETHER_BRICKS nether"
+    - "ITEM WARPED_FUNGUS nether"
+    - "ITEM CRIMSON_STEM nether"
+    - "ITEM GILDED_BLACKSTONE nether"
+    - "ITEM SHROOMLIGHT nether"
+    - "ITEM RESPAWN_ANCHOR nether"
+    - "KILL ZOMBIE"
+    - "KILL SKELETON"
+    - "KILL CREEPER"
+    - "KILL SPIDER"
+    - "KILL ENDERMAN"
+    - "KILL WITCH"
+    - "KILL SLIME"
+    - "KILL DROWNED"
+    - "KILL PILLAGER"
+    - "KILL PHANTOM"
+    - "KILL SILVERFISH"
+    - "KILL CAVE_SPIDER"
+    - "KILL HUSK"
+    - "KILL STRAY"
+    - "KILL GUARDIAN"
+    - "KILL ELDER_GUARDIAN"
+    - "KILL WARDEN"
+    - "KILL IRON_GOLEM"
+    - "KILL SNOW_GOLEM"
+    - "KILL BAT"
+    - "KILL DOLPHIN"
+    - "KILL SQUID"
+    - "KILL GLOW_SQUID"
+    - "KILL FOX"
+    - "KILL BEE"
+    - "KILL GOAT"
+    - "KILL POLAR_BEAR"
+    - "KILL LLAMA"
+    - "KILL FROG"
+    - "KILL RABBIT"
+    - "KILL WANDERING_TRADER"
+    - "KILL ZOMBIE_VILLAGER"
+    - "KILL BOGGED"
+    - "KILL BREEZE"
+    - "KILL ARMADILLO"
+    - "KILL TURTLE"
+    - "KILL BLAZE nether"
+    - "KILL GHAST nether"
+    - "KILL MAGMA_CUBE nether"
+    - "KILL WITHER_SKELETON nether"
+    - "KILL PIGLIN nether"
+    - "KILL HOGLIN nether"
+    - "KILL ZOMBIFIED_PIGLIN nether"
+    - "KILL STRIDER nether"
+    - "EAT GOLDEN_APPLE icon=GOLDEN_APPLE"
+    - "EAT SPIDER_EYE icon=SPIDER_EYE"
+    - "EAT ROTTEN_FLESH icon=ROTTEN_FLESH"
+    - "EAT PUFFERFISH icon=PUFFERFISH"
+    - "EAT POISONOUS_POTATO icon=POISONOUS_POTATO"
+    - "EAT SUSPICIOUS_STEW icon=SUSPICIOUS_STEW"
+    - "EAT COOKIE icon=COOKIE"
+    - "EAT PUMPKIN_PIE icon=PUMPKIN_PIE"
+    - "EAT RABBIT_STEW icon=RABBIT_STEW"
+    - "EAT BEETROOT_SOUP icon=BEETROOT_SOUP"
+    - "EAT HONEY_BOTTLE icon=HONEY_BOTTLE"
+    - "EAT GLOW_BERRIES icon=GLOW_BERRIES"
+    - "EAT DRIED_KELP icon=DRIED_KELP"
+    - "EAT TROPICAL_FISH icon=TROPICAL_FISH"
+    - "EAT COD icon=COD"
+    - "EAT MELON_SLICE icon=MELON_SLICE"
+    - "EAT GOLDEN_CARROT icon=GOLDEN_CARROT"
+    - "EAT CHICKEN icon=CHICKEN"
+    - "DIE FALL"
+    - "DIE LAVA"
+    - "DIE DROWN"
+    - "DIE CACTUS"
+    - "DIE BERRY"
+    - "DIE ZOMBIE"
+    - "DIE SKELETON"
+    - "DIE CREEPER"
+    - "DIE SPIDER"
+    - "DIE ANVIL"
+    - "DIE BEE"
+    - "DIE MAGMA"
+    - "DIE SUFFOCATE"
+    - "DIE FREEZE"
+    - "DIE FIREWORK"
+    - "DIE IRON_GOLEM"
+    - "DIE WOLF"
+    - "DIE LLAMA"
+    - "DIE WITCH"
+    - "DIE TNT"
+    - "DIE CAMPFIRE"
+    - "DIE BLAZE nether"
+    - "DIE PIGLIN nether"
+    - "DIE GHAST nether"
+    - "DIE BED nether"
+    - "ADV story/enter_the_nether nether icon=NETHERRACK | Enter the Nether"
+    - "ADV nether/find_fortress nether icon=NETHER_BRICKS | Find a Nether Fortress"
+    - "ADV nether/distract_piglin nether icon=GOLD_INGOT | Distract a piglin with gold"
+    - "ADV nether/ride_strider nether icon=WARPED_FUNGUS_ON_A_STICK | Ride a strider"
+    - "ADV nether/return_to_sender nether icon=FIRE_CHARGE | Return to Sender (kill a ghast with its fireball)"
+    - "ADV nether/charge_respawn_anchor nether icon=RESPAWN_ANCHOR | Charge a respawn anchor"
+    - "ADV nether/loot_bastion nether icon=CHEST | Loot a bastion chest"
+    - "ADV nether/brew_potion nether icon=BREWING_STAND | Brew a potion"
+    - "ADV story/follow_ender_eye nether icon=ENDER_EYE | Find a stronghold"
+    - "ADV adventure/spyglass_at_ghast nether icon=SPYGLASS | Look at a ghast through a spyglass"
+    - "ADV story/cure_zombie_villager icon=GOLDEN_APPLE | Cure a zombie villager"
+    - "ADV story/deflect_arrow icon=SHIELD | Block an arrow with a shield"
+    - "ADV story/enchant_item cat=enchant icon=ENCHANTING_TABLE | Enchant an item"
+    - "ADV story/form_obsidian icon=OBSIDIAN | Make obsidian with water and lava"
+    - "ADV adventure/sleep_in_bed icon=RED_BED | Sleep in a bed"
+    - "ADV adventure/trade icon=EMERALD | Trade with a villager"
+    - "ADV adventure/sniper_duel icon=BOW | Shoot a skeleton from 50+ blocks"
+    - "ADV adventure/bullseye icon=TARGET | Bullseye (hit the middle of a target)"
+    - "ADV adventure/walk_on_powder_snow_with_leather_boots icon=LEATHER_BOOTS | Walk on powder snow in leather boots"
+    - "ADV adventure/fall_from_world_height icon=FEATHER | Fall from the top of the world to the bottom"
+    - "ADV adventure/summon_iron_golem icon=CARVED_PUMPKIN | Build an iron golem"
+    - "ADV adventure/read_power_of_chiseled_bookshelf icon=CHISELED_BOOKSHELF | Read a chiseled bookshelf with a comparator"
+    - "ADV adventure/salvage_sherd icon=BRUSH | Brush a pottery sherd out of suspicious sand"
+    - "ADV adventure/brush_armadillo icon=ARMADILLO_SCUTE | Brush an armadillo"
+    - "ADV adventure/voluntary_exile icon=WHITE_BANNER | Kill a raid captain"
+    - "ADV adventure/whos_the_pillager_now icon=CROSSBOW | Kill a pillager with a crossbow"
+    - "ADV adventure/minecraft_trials_edition icon=TRIAL_KEY | Step into a trial chamber"
+    - "ADV adventure/avoid_vibration icon=SCULK_SENSOR | Sneak near a sculk sensor"
+    - "ADV husbandry/breed_an_animal icon=WHEAT | Breed two animals"
+    - "ADV husbandry/tame_an_animal icon=BONE | Tame an animal"
+    - "ADV husbandry/fishy_business icon=FISHING_ROD | Catch a fish"
+    - "ADV husbandry/tactical_fishing icon=COD_BUCKET | Tactical Fishing (catch a fish in a bucket)"
+    - "ADV husbandry/make_a_sign_glow icon=GLOW_INK_SAC | Make a sign glow"
+    - "ADV husbandry/safely_harvest_honey icon=HONEY_BOTTLE | Harvest honey with a campfire under it"
+    - "ADV husbandry/ride_a_boat_with_a_goat icon=OAK_BOAT | Ride a boat with a goat"
+    - "ADV husbandry/axolotl_in_a_bucket icon=AXOLOTL_BUCKET | Catch an axolotl in a bucket"
+    - "ADV husbandry/wax_on icon=HONEYCOMB | Wax a copper block"
+    - "ADV husbandry/tadpole_in_a_bucket icon=TADPOLE_BUCKET | Catch a tadpole in a bucket"
+    - "BIOME mushroom_fields"
+    - "BIOME badlands"
+    - "BIOME jungle"
+    - "BIOME bamboo_jungle"
+    - "BIOME ice_spikes"
+    - "BIOME cherry_grove"
+    - "BIOME mangrove_swamp"
+    - "BIOME dripstone_caves"
+    - "BIOME lush_caves"
+    - "BIOME snowy_slopes"
+    - "BIOME desert"
+    - "BIOME swamp"
+    - "BIOME dark_forest"
+    - "BIOME savanna"
+    - "BIOME sunflower_plains"
+    - "BIOME flower_forest"
+    - "BIOME birch_forest"
+    - "BIOME taiga"
+    - "BIOME jagged_peaks"
+    - "BIOME deep_dark"
+    - "OPP KILL icon=IRON_SWORD | Kill an opponent"
+    - "OPP SNOWBALL icon=SNOWBALL | Hit an opponent with a snowball"
+    - "OPP EGG icon=EGG | Hit an opponent with an egg"
+    - "OPP HOOK icon=FISHING_ROD | What a Catch! Hook an opponent with a fishing rod"
+    - "OPP OUTLEVEL icon=EXPERIENCE_BOTTLE | Have more levels than every opponent (5+)"
+    - "LEVEL 15"
+    - "LEVEL 30"
+
+# ---------------------------------------------------------------- Block Shuffle
+blockshuffle:
+  # Rounds 1 and 2 only use these (easy to find near spawn)
+  starter-blocks: [GRASS_BLOCK, DIRT, SAND, GRAVEL, STONE, COBBLESTONE, OAK_LOG, OAK_PLANKS, OAK_LEAVES, CRAFTING_TABLE,
+                   BIRCH_LOG, SANDSTONE, COARSE_DIRT, ANDESITE, DIORITE, GRANITE]
+  # Round 3 on
+  blocks: [SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG, CHERRY_LOG, MANGROVE_LOG, PALE_OAK_LOG,
+           SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS, CHERRY_PLANKS,
+           SPRUCE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, ACACIA_LEAVES, DARK_OAK_LEAVES, CHERRY_LEAVES, AZALEA_LEAVES,
+           STRIPPED_OAK_LOG, STRIPPED_SPRUCE_LOG, STRIPPED_BIRCH_LOG, OAK_WOOD,
+           COAL_ORE, IRON_ORE, COPPER_ORE, GOLD_ORE, REDSTONE_ORE, LAPIS_ORE, DIAMOND_ORE, EMERALD_ORE,
+           DEEPSLATE, COBBLED_DEEPSLATE, TUFF, CALCITE, DRIPSTONE_BLOCK,
+           FURNACE, CHEST, BARREL, BOOKSHELF, HAY_BLOCK, IRON_BLOCK, COAL_BLOCK, COPPER_BLOCK, RAW_IRON_BLOCK,
+           LAPIS_BLOCK, REDSTONE_BLOCK, GOLD_BLOCK,
+           BRICKS, STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS, SMOOTH_STONE,
+           GLASS, TINTED_GLASS, TERRACOTTA, WHITE_TERRACOTTA, RED_TERRACOTTA, ORANGE_TERRACOTTA,
+           WHITE_WOOL, BLACK_WOOL, RED_WOOL, BLUE_WOOL, LIME_WOOL, YELLOW_WOOL, WHITE_CARPET,
+           CLAY, MUD, PACKED_MUD, MUD_BRICKS, MOSSY_COBBLESTONE, MOSS_BLOCK, MOSS_CARPET, OBSIDIAN,
+           ICE, PACKED_ICE, SNOW_BLOCK, SNOW,
+           MYCELIUM, PODZOL, RED_SAND, RED_SANDSTONE, SMOOTH_SANDSTONE, CUT_SANDSTONE, CHISELED_SANDSTONE,
+           ROOTED_DIRT, DIRT_PATH, FARMLAND,
+           PUMPKIN, CARVED_PUMPKIN, JACK_O_LANTERN, MELON, BONE_BLOCK,
+           POLISHED_ANDESITE, POLISHED_DIORITE, POLISHED_GRANITE, POLISHED_DEEPSLATE, DEEPSLATE_BRICKS,
+           COBBLESTONE_SLAB, OAK_SLAB, STONE_SLAB, OAK_STAIRS, COBBLESTONE_STAIRS, COBBLESTONE_WALL, OAK_FENCE, OAK_TRAPDOOR,
+           SCAFFOLDING, LADDER, ANVIL, CAULDRON, COMPOSTER, SMOKER, BLAST_FURNACE, LOOM, CARTOGRAPHY_TABLE,
+           FLETCHING_TABLE, SMITHING_TABLE, STONECUTTER, GRINDSTONE, JUKEBOX, NOTE_BLOCK,
+           TNT, TARGET, HONEYCOMB_BLOCK, SLIME_BLOCK, DRIED_KELP_BLOCK,
+           WHITE_CONCRETE, RED_CONCRETE, BLUE_CONCRETE, WHITE_CONCRETE_POWDER, AMETHYST_BLOCK,
+           RAIL, OAK_PRESSURE_PLATE, STONE_PRESSURE_PLATE, LIGHT_WEIGHTED_PRESSURE_PLATE, HEAVY_WEIGHTED_PRESSURE_PLATE]
+  # Added to "blocks" when Enable Nether is on
+  nether-blocks: [NETHERRACK, SOUL_SAND, SOUL_SOIL, BASALT, BLACKSTONE, NETHER_BRICKS, MAGMA_BLOCK, GLOWSTONE,
+                  CRIMSON_NYLIUM, WARPED_NYLIUM, NETHER_WART_BLOCK, WARPED_WART_BLOCK, CRIMSON_STEM, WARPED_STEM,
+                  NETHER_QUARTZ_ORE, NETHER_GOLD_ORE, GILDED_BLACKSTONE, SMOOTH_BASALT, QUARTZ_BLOCK, SHROOMLIGHT]
+
+# Stats hall boards flip through "All Games" and every mode that has been played. Seconds per page (0 = only All Games).
+leaderboard-cycle-seconds: 8

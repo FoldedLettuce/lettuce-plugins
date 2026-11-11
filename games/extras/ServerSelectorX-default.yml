@@ -1,0 +1,115 @@
+rows: 3
+title: '&8» &a&lLettuce MC &8«'
+
+item-name: '&a&lServer Selector &7(Right Click)'
+item-lore:
+- '&7Pick a server to play on'
+item: COMPASS
+on-join: true
+inv-slot: 4
+
+url-message: '&3&lClick here'
+command: "servers"
+
+require-permission: false
+permission-node: 'ssx.menu.default'
+no-permission-message: "&cYou don't have permission to open this menu."
+
+only-in-worlds: [world]
+
+menu:
+
+  10:
+    ping-server: true
+    ip: 10.0.12.11
+    port: 25571
+    action: 'srv:survival1'
+    online:
+      item: GRASS_BLOCK
+      name: '&a&lSurvival 1'
+      lore:
+       - '&7The OG world'
+       - ''
+       - '&7Online: &f{online}&7/&f{max}'
+       - ''
+       - '&eClick to join!'
+    offline:
+      item: GRAY_DYE
+      name: '&c&lSurvival 1'
+      lore:
+       - '&7The OG world'
+       - ''
+       - '&cOffline right now'
+
+  12:
+    ping-server: true
+    ip: 10.0.12.11
+    port: 25573
+    action: 'srv:survival2'
+    online:
+      item: DIAMOND_PICKAXE
+      name: '&6&lSurvival 2'
+      lore:
+       - '&7The new survival world'
+       - ''
+       - '&7Online: &f{online}&7/&f{max}'
+       - ''
+       - '&eClick to join!'
+    offline:
+      item: GRAY_DYE
+      name: '&c&lSurvival 2'
+      lore:
+       - '&7The new survival world'
+       - ''
+       - '&cOffline right now'
+
+  14:
+    ping-server: true
+    ip: 10.0.12.11
+    port: 25572
+    action: 'srv:skyblock'
+    online:
+      item: OAK_SAPLING
+      name: '&b&lSkyblock'
+      lore:
+       - '&7Your own island in the sky'
+       - ''
+       - '&7Online: &f{online}&7/&f{max}'
+       - ''
+       - '&eClick to join!'
+    offline:
+      item: DEAD_BUSH
+      name: '&c&lSkyblock'
+      lore:
+       - '&7Your own island in the sky'
+       - ''
+       - '&cOffline right now'
+
+  16:
+    ping-server: true
+    ip: 10.0.12.11
+    port: 25574
+    action: 'srv:games'
+    online:
+      item: CHEST
+      name: '&c&lGames'
+      lore:
+       - '&7Random Items Challenge'
+       - '&8More modes coming soon'
+       - ''
+       - '&7Online: &f{online}&7/&f{max}'
+       - ''
+       - '&eClick to join!'
+    offline:
+      item: GRAY_DYE
+      name: '&c&lGames'
+      lore:
+       - '&7Random Items Challenge'
+       - ''
+       - '&cOffline right now'
+
+  -1:
+    action: 'none'
+    offline:
+      item: GRAY_STAINED_GLASS_PANE
+      name: ' '

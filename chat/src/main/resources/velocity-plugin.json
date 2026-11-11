@@ -1,0 +1,1 @@
+{"id":"lettucechat","name":"LettuceChat","version":"1.6.1","description":"Network-wide chat for Lettuce MC","authors":["FoldedLettuce"],"main":"xyz.foldedlettuce.lettucechat.LettuceChat","dependencies":[{"id":"luckperms","optional":true}]}

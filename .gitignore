@@ -1,0 +1,15 @@
+build/
+.gradle/
+*.class
+# built jars (the wrapper jar is the one exception)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+# never commit server data or secrets
+stats.yml
+presets.yml
+*.env
+.env
+deploy/.env
+.idea/
+*.iml

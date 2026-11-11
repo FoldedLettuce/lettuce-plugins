@@ -1,0 +1,1 @@
+{"id":"lettucerestart","name":"LettuceRestart","version":"1.0.0","description":"Weekly restart that waits until the network is empty","authors":["FoldedLettuce"],"dependencies":[],"main":"xyz.foldedlettuce.lettucerestart.velocity.LettuceRestartVelocity"}

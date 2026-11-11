@@ -1,0 +1,54 @@
+name: LettuceGames
+version: 2.17.0
+main: xyz.foldedlettuce.lettucegames.LettuceGames
+api-version: '1.21'
+description: Lettuce MC minigames - RIC, Death Swap, Block Shuffle, Manhunt, Hitman, Speedrun, Bingo and Death Shuffle
+author: FoldedLettuce
+commands:
+  party:
+    description: Party commands
+    aliases: [p]
+    usage: /p help
+  pc:
+    description: Party chat
+    usage: /pc <message>
+  track:
+    description: Pick who your tracker compass points at
+    usage: /track [name|nearest]
+  spec:
+    description: Spectate your party's game or teleport to a player
+    aliases: [spectate, teleporter]
+  leave:
+    description: Leave the current game
+    aliases: [forfeit]
+  specmode:
+    description: Switch spectating between walk/fly and noclip
+    aliases: [ghost]
+  pick:
+    description: Reopen the Blockswap block picker
+  skip:
+    description: Vote to reroll this round's blocks or deaths
+    aliases: [voteskip]
+  bingocard:
+    description: Open the Bingo card
+    aliases: [card, bc]
+  blacklist:
+    description: Open the item blacklist, optionally searching
+    usage: /blacklist [search]
+  stats:
+    description: Your stats, or someone else's
+    usage: /stats [player]
+  leaderboard:
+    description: Open the leaderboards
+    aliases: [lb, top, leaderboards]
+  lettucegames:
+    description: LettuceGames admin
+    aliases: [lg]
+    permission: lettucegames.admin
+permissions:
+  lettucegames.admin:
+    description: Admin commands
+    default: op
+  lettucegames.build:
+    description: Build in the waiting area while in creative
+    default: op

@@ -1,0 +1,24 @@
+# LettuceRestart - restarts the server once a week, but only when nobody is online.
+#
+# Once the restart window below has passed, the server is "due". From then on it
+# saves and restarts the moment it has been empty for empty-seconds. If people are
+# on at 6am it just waits for them to leave. Pterodactyl starts it back up.
+#
+# On the proxy "empty" means nobody on the whole network.
+
+enabled: true
+
+# Day(s) for the restart window. One day, a comma list (MONDAY,THURSDAY) or DAILY
+days: MONDAY
+
+# Time of the restart window (24h)
+time: "06:00"
+
+timezone: America/Chicago
+
+# How long the server has to be empty before restarting. Stops it from restarting
+# while someone is just hopping between servers.
+empty-seconds: 30
+
+# Never restart a server that's been up less than this (avoids restart loops)
+min-uptime-minutes: 30

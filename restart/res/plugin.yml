@@ -1,0 +1,14 @@
+name: LettuceRestart
+version: 1.0.0
+main: xyz.foldedlettuce.lettucerestart.paper.LettuceRestartPaper
+api-version: '1.21'
+author: FoldedLettuce
+description: Weekly restart that waits until the server is empty
+commands:
+  lettucerestart:
+    description: Restart schedule status / test
+    aliases: [lrestart]
+    permission: lettucerestart.admin
+permissions:
+  lettucerestart.admin:
+    default: op
