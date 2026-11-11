@@ -21,9 +21,8 @@ Jars come out as `<Name>-<version>.jar`. Bump `version` in the plugin's `build.g
 
 ## Releasing
 
-    git tag v2026.11.10 && git push --tags
-
-The workflow builds everything and attaches the four jars to a GitHub Release.
+Every push to `main` builds and publishes a release named `vYYYY.MM.DD-b<run number>` with all four jars. Nothing to run.
+Pushing a `v*` tag by hand also works and uses that tag name.
 
 ## Deploying
 
