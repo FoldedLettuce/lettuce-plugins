@@ -1,9 +1,10 @@
 name: LettuceGames
-version: 2.18.0
+version: 2.19.0
 main: xyz.foldedlettuce.lettucegames.LettuceGames
 api-version: '1.21'
 description: Lettuce MC minigames - RIC, Death Swap, Block Shuffle, Manhunt, Hitman, Speedrun, Bingo and Death Shuffle
 author: FoldedLettuce
+softdepend: [OldCombatMechanics]
 commands:
   party:
     description: Party commands

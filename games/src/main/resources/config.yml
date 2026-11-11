@@ -686,3 +686,15 @@ blockshuffle:
 
 # Stats hall boards flip through "All Games" and every mode that has been played. Seconds per page (0 = only All Games).
 leaderboard-cycle-seconds: 8
+
+# 1.8 Combat setting. Needs OldCombatMechanics on this server with an "old" and a "new" modeset,
+# both allowed in every world (worlds: __default__: ["new", "old"]).
+# Players in a match with the setting on get the old modeset, everyone else the new one.
+combat:
+  enabled: true
+  old-modeset: old
+  new-modeset: new
+  # tried in order until one works, {mode} and {player} get filled in
+  commands:
+    - "ocm mode {mode} {player}"
+    - "ocm modeset {mode} {player}"

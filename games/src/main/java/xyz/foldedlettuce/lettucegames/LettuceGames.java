@@ -55,6 +55,7 @@ public class LettuceGames extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new HuntListener(this), this);
         Bukkit.getPluginManager().registerEvents(new TwistListener(this), this);
         Bukkit.getPluginManager().registerEvents(new BingoListener(this), this);
+        new OldCombat(this).start();
 
         bind("party", parties);
         for (String c : new String[]{"stats", "leaderboard"}) {
