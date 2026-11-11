@@ -515,6 +515,9 @@ public class Match {
         return best;
     }
 
+    /** Vanilla's smallest possible world border (1x1). Every shrink ends here, which is as good as 0x0. */
+    private static final double MIN_BORDER = 1.0;
+
     private void setupBorder(World w, double size) {
         WorldBorder b = w.getWorldBorder();
         // border is centered on spawn, scaled down for the nether
@@ -983,7 +986,7 @@ public class Match {
             // closes fully in 10m (Normal) or 6m (Rush), or sooner if the time limit is shorter than that
             int dur = Math.min((int) (limit * 0.9), s.get(Setting.SHRINKING_BORDER) == 2 ? 360 : 600);
             borderShrinkEnd = dur;
-            world.getWorldBorder().setSize(100, dur);
+            world.getWorldBorder().setSize(MIN_BORDER, dur);
         }
         if (s.on(Setting.ASSASSINS) || freezeTag()) {
             huntTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickAssassins, 5L, 2L);
@@ -1298,7 +1301,7 @@ public class Match {
         int remaining = borderShrinkEnd - elapsed;
         int faster = Math.max(30, (int) (remaining * 0.75));
         borderShrinkEnd = elapsed + faster;
-        world.getWorldBorder().setSize(100, faster);
+        world.getWorldBorder().setSize(MIN_BORDER, faster);
         broadcast(tag() + "§cThe border speeds up! §7Fully closed in " + Msg.time(faster) + ".");
     }
 
@@ -2554,14 +2557,14 @@ public class Match {
         double[][] phases;
         double speed;
         if (mode == 1) {
-            phases = new double[][]{{120, full * 0.6, 30}, {60, full * 0.3, 30}, {60, 100, 30}};
+            phases = new double[][]{{120, full * 0.6, 30}, {60, full * 0.3, 30}, {60, MIN_BORDER, 30}};
             speed = plugin.getConfig().getDouble("border.normal-speed", 1.5);
         } else if (mode == 2) {
-            phases = new double[][]{{60, full * 0.5, 20}, {45, full * 0.2, 20}, {45, 100, 20}};
+            phases = new double[][]{{60, full * 0.5, 20}, {45, full * 0.2, 20}, {45, MIN_BORDER, 20}};
             speed = plugin.getConfig().getDouble("border.rush-speed", 2.5);
         } else {
             int close = s.get(Setting.BORDER_CLOSE);
-            phases = close < 0 ? new double[0][] : new double[][]{{close, 100, 30}};
+            phases = close < 0 ? new double[0][] : new double[][]{{close, MIN_BORDER, 30}};
             speed = plugin.getConfig().getDouble("border.normal-speed", 1.5);
         }
         speed = Math.max(0.2, speed);
@@ -2572,14 +2575,14 @@ public class Match {
             broadcast(Msg.GAME + "§eThe border starts shrinking in §c30 seconds§e!");
         }
         if (elapsed >= borderNextAt) {
-            double target = Math.max(100, ph[1]);
+            double target = Math.max(MIN_BORDER, ph[1]);
             double cur = world.getWorldBorder().getSize();
             // each side only moves at "speed" blocks per second, so it's always walkable
             int dur = (int) Math.max(ph[2], Math.ceil(Math.max(0, cur - target) / 2.0 / speed));
             borderPhase++;
             borderSize = target;
             world.getWorldBorder().setSize(borderSize, (long) dur);
-            if (nether != null) nether.getWorldBorder().setSize(Math.max(16, borderSize / 8), (long) dur);
+            if (nether != null) nether.getWorldBorder().setSize(Math.max(MIN_BORDER, borderSize / 8), (long) dur);
             borderNextAt = elapsed + dur + (borderPhase < phases.length ? (int) phases[borderPhase][0] : 0);
             broadcast(Msg.GAME + "§c§lThe border is shrinking! §7Down to §e±" + (int) (borderSize / 2) + " §7over " + Msg.time(dur) + ".");
             for (Player p : viewers()) p.playSound(p.getLocation(), "minecraft:entity.wither.spawn", 0.5f, 1.2f);
@@ -2600,7 +2603,7 @@ public class Match {
         zoneFromZ = b.getCenter().getZ();
         zoneFromSize = b.getSize();
         double full = radius * 2.0;
-        zoneToSize = Math.max(24, full * ZONE_SIZES[zoneStage]);
+        zoneToSize = Math.max(MIN_BORDER, full * ZONE_SIZES[zoneStage]);
         double slack = Math.max(0, (zoneFromSize - zoneToSize) / 2.0);
         ThreadLocalRandom r = ThreadLocalRandom.current();
         zoneToX = zoneFromX + (slack > 0 ? r.nextDouble(-slack, slack) : 0);
@@ -2646,7 +2649,7 @@ public class Match {
         if (f >= 1.0) {
             zoneStage++;
             if (zoneStage < ZONE_SIZES.length) planZone();
-            else broadcast(tag() + "§d§lFinal zone! §7It's not moving again.");
+            else broadcast(tag() + "§d§lThe zone has closed completely!");
         }
     }
 
@@ -3220,6 +3223,7 @@ public class Match {
             p.setFlying(true);
             p.setInvisible(true);
             p.setCollidable(false);
+            noPush(p, true);
             p.setCanPickupItems(false);
             if (plugin.getConfig().getBoolean("spectator-tablist", true)) {
                 // stay in the tab list: invisible, silent, no nametag, held items hidden (see hideGhostGear)
@@ -3241,12 +3245,42 @@ public class Match {
             p.setInvisible(false);
             p.setSilent(false);
             p.setCollidable(true);
+            noPush(p, false);
             p.setCanPickupItems(true);
             p.setGameMode(GameMode.SPECTATOR);
             if (wasGhost) {
                 for (Player o : Bukkit.getOnlinePlayers()) o.showPlayer(plugin, p);
             }
         }
+    }
+
+    public static final String NO_PUSH_TEAM = "lg_nopush";
+
+    /**
+     * Walk/fly spectators must never shove players, mobs, boats or minecarts. Player#setCollidable alone isn't enough:
+     * the server decides pushing from the MAIN scoreboard's team collision rules (our per-match boards don't count),
+     * and a team with collision NEVER stops the push in both directions.
+     */
+    public static void noPush(Player p, boolean on) {
+        Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
+        Team t = main.getTeam(NO_PUSH_TEAM);
+        if (on) {
+            if (t == null) {
+                t = main.registerNewTeam(NO_PUSH_TEAM);
+                t.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+                t.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+            }
+            // a player can only be on one team of a board; the main board isn't used for anything else here
+            t.addEntry(p.getName());
+        } else if (t != null) {
+            t.removeEntry(p.getName());
+        }
+    }
+
+    /** Clears leftovers (the main scoreboard is saved to disk, so a crash mid-game could leave people on the team). */
+    public static void clearNoPushTeam() {
+        Team t = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(NO_PUSH_TEAM);
+        if (t != null) t.unregister();
     }
 
     /** Ghost spectators share a team on the spectator board that can see friendly invisibles, so they show as shadows to each other. */
@@ -3374,6 +3408,7 @@ public class Match {
         if (!ghosts.remove(p.getUniqueId())) return;
         p.setInvisible(false);
         p.setCollidable(true);
+        noPush(p, false);
         p.setCanPickupItems(true);
         for (Player o : Bukkit.getOnlinePlayers()) o.showPlayer(plugin, p);
     }

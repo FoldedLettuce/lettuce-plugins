@@ -35,6 +35,7 @@ public class LettuceGames extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        Match.clearNoPushTeam();
         maps = new MapPool(this);
         cleanupOldWorlds(maps.savedNames());
         // after the server's up: load saved maps one at a time, then top up
@@ -79,6 +80,7 @@ public class LettuceGames extends JavaPlugin {
     @Override
     public void onDisable() {
         if (stats != null) stats.save();
+        Match.clearNoPushTeam();
         for (Match m : new ArrayList<>(matches)) {
             for (Player p : m.viewers()) p.teleport(lobby());
             for (World w : new World[]{m.nether, m.world}) {
