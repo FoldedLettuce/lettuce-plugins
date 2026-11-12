@@ -2775,6 +2775,8 @@ public class Match {
 
     /** Blocks players placed this game. Breaking these still drops them when World Loot is off. */
     public final Set<String> placed = new HashSet<>();
+    /** Cache of the highest natural block Y per column (key = x,z packed), used by the build height limit. */
+    public final java.util.Map<Long, Integer> naturalTop = new java.util.HashMap<>();
 
     public static String blockKey(org.bukkit.block.Block b) {
         return b.getWorld().getName() + ":" + b.getX() + ":" + b.getY() + ":" + b.getZ();

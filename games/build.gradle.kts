@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "xyz.foldedlettuce"
-version = "2.19.0" // keep in sync with src/main/resources/plugin.yml
+version = "2.20.0" // keep in sync with src/main/resources/plugin.yml
 
 repositories {
     mavenCentral()

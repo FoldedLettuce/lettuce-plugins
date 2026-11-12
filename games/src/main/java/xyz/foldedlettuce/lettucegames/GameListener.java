@@ -365,10 +365,10 @@ public class GameListener implements Listener {
             e.setCancelled(true);
             return;
         }
-        int top = m.s.get(Setting.HEIGHT_LIMIT);
-        if (top != Integer.MAX_VALUE && e.getBlock().getY() > top) {
+        int above = m.s.get(Setting.HEIGHT_LIMIT);
+        if (above != Integer.MAX_VALUE && e.getBlock().getY() > naturalTop(m, e.getBlock()) + above) {
             e.setCancelled(true);
-            p.sendActionBar("§cYou can't build above Y " + top + "!");
+            p.sendActionBar("§cYou can only build " + above + " blocks above the ground here!");
             return;
         }
         m.placed.add(Match.blockKey(e.getBlock()));
@@ -379,11 +379,33 @@ public class GameListener implements Listener {
         Player p = e.getPlayer();
         Match m = plugin.matchFor(p.getWorld());
         if (m == null) return;
-        int top = m.s.get(Setting.HEIGHT_LIMIT);
-        if (top != Integer.MAX_VALUE && e.getBlock().getY() > top) {
+        int above = m.s.get(Setting.HEIGHT_LIMIT);
+        if (above != Integer.MAX_VALUE && e.getBlock().getY() > naturalTop(m, e.getBlock()) + above) {
             e.setCancelled(true);
-            p.sendActionBar("§cYou can't build above Y " + top + "!");
+            p.sendActionBar("§cYou can only build " + above + " blocks above the ground here!");
         }
+    }
+
+    /**
+     * Highest natural block Y in this block's column (trees, hills and overhangs count). Blocks players placed
+     * are skipped, and the result is cached per column so later building can't raise the ceiling.
+     */
+    private int naturalTop(Match m, org.bukkit.block.Block at) {
+        World w = at.getWorld();
+        int x = at.getX(), z = at.getZ();
+        long key = ((long) x << 32) ^ (z & 0xffffffffL);
+        Integer cached = m.naturalTop.get(key);
+        if (cached != null) return cached;
+        int min = w.getMinHeight();
+        int y = w.getHighestBlockYAt(x, z, org.bukkit.HeightMap.WORLD_SURFACE);
+        while (y > min) {
+            org.bukkit.block.Block b = w.getBlockAt(x, y, z);
+            boolean ours = b.equals(at) || m.placed.contains(Match.blockKey(b));
+            if (!ours && !b.getType().isAir()) break;
+            y--;
+        }
+        m.naturalTop.put(key, y);
+        return y;
     }
 
     // ------------------------------------------------------------------ world loot off
