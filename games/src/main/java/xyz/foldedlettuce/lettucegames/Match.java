@@ -3295,6 +3295,8 @@ public class Match {
             t.setCanSeeFriendlyInvisibles(true);
             t.setPrefix("§7[Spec] ");
             t.setColor(ChatColor.GRAY);
+            // clients decide pushing from the teams on THEIR board, so the ghost team itself must have no collision
+            t.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         }
         if (join) {
             for (Team other : sb.getTeams()) if (other != t && other.hasEntry(p.getName())) other.removeEntry(p.getName());
@@ -3310,6 +3312,7 @@ public class Match {
                 bt.setPrefix("§7[Spec] ");
                 bt.setColor(ChatColor.GRAY);
                 bt.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+                bt.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
             }
             if (join) {
                 for (Team other : board.getTeams()) if (other != bt && other.hasEntry(p.getName())) other.removeEntry(p.getName());
