@@ -12,7 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** Lettuce MC backend helper: /lobby + /hub, and blocks chat from players muted network-wide. */
+/** Lettuce MC backend helper: /lobby + /hub + /l, and blocks chat from players muted network-wide. */
 public final class LettuceCore extends JavaPlugin implements Listener {
     private static final String TARGET = "lobby";
     private static final String MUTE_KEY = "lettucechat-muted";

@@ -1,12 +1,12 @@
 name: LettuceCore
-version: 1.1.0
+version: 1.2.0
 main: xyz.foldedlettuce.lettucecore.LettuceCore
 api-version: '1.21'
-description: Lettuce MC backend helper - /lobby, /hub and network-wide mutes
+description: Lettuce MC backend helper - /lobby, /hub, /l and network-wide mutes
 author: FoldedLettuce
 softdepend: [LuckPerms]
 commands:
   lobby:
     description: Go back to the lobby
-    aliases: [hub]
+    aliases: [hub, l]
     usage: /lobby
