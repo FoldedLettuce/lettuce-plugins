@@ -13,6 +13,9 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.player.KickedFromServerEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,8 +24,14 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,12 +61,29 @@ public final class LettuceChat {
             "survival2", "Survival 2",
             "skyblock", "Skyblock",
             "games", "Games");
-    private static final Path WEBHOOK_FILE = Path.of("plugins", "lettucechat", "discord-webhook.txt");
+    static final String VERSION = "1.7.0";
+    private static final Pattern WEBHOOK_URL = Pattern.compile(
+            "https://(?:(?:ptb|canary)\\.)?discord(?:app)?\\.com/api/(?:v\\d+/)?webhooks/\\d+/[A-Za-z0-9_-]+(?:\\?.*)?");
+    private static final String USER_AGENT =
+            "DiscordBot (https://github.com/FoldedLettuce/lettuce-plugins, " + VERSION + ") LettuceChat";
 
     private final ProxyServer proxy;
+    private final Path webhookFile;
     private final Set<UUID> online = ConcurrentHashMap.newKeySet();
-    private final HttpClient http = HttpClient.newHttpClient();
-    private String webhook = "";
+    // HTTP/1.1 on purpose: a long-lived HTTP/2 connection to Discord/Cloudflare gets dropped while idle and
+    // the client keeps trying to reuse it, so every webhook after that fails. 1.1 + retries doesn't have that problem.
+    private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+    // one thread so Discord messages go out in order (join before switch before leave) and never block the proxy
+    private final ExecutorService discord = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "LettuceChat-Discord");
+        t.setDaemon(true);
+        return t;
+    });
+    private volatile String webhook = "";
+    private volatile boolean webhookFailing = false;
     private final Logger log = Logger.getLogger("LettuceChat");
     private Object legacy;
     private Method deserialize;
@@ -65,8 +91,11 @@ public final class LettuceChat {
     private Method plainSerialize;
 
     @Inject
-    public LettuceChat(ProxyServer proxy) {
+    public LettuceChat(ProxyServer proxy, @DataDirectory Path dataDir) {
         this.proxy = proxy;
+        Path file = dataDir.resolve("discord-webhook.txt");
+        Path legacyFile = Path.of("plugins", "lettucechat", "discord-webhook.txt"); // where 1.6.x looked
+        this.webhookFile = (!Files.exists(file) && Files.exists(legacyFile)) ? legacyFile : file;
         try {
             Class<?> c = Class.forName("net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer");
             legacy = c.getMethod("legacyAmpersand").invoke(null);
@@ -83,7 +112,15 @@ public final class LettuceChat {
         cm.register(cm.metaBuilder("unmute").plugin(this).build(), new MuteCommand(false));
         loadWebhook();
         cm.register(cm.metaBuilder("duty").plugin(this).build(), new DutyCommand());
-        log.info("LettuceChat 1.6.1 ready: network chat + /mute /unmute /duty + restart-to-lobby");
+        cm.register(cm.metaBuilder("lettucechat").plugin(this).build(), new AdminCommand());
+        log.info("LettuceChat " + VERSION + " ready: network chat + /mute /unmute /duty /lettucechat + restart-to-lobby");
+    }
+
+    @Subscribe
+    public void onShutdown(ProxyShutdownEvent event) {
+        // let queued leave messages go out before the proxy exits
+        discord.shutdown();
+        try { discord.awaitTermination(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) { }
     }
 
     @Subscribe
@@ -112,21 +149,42 @@ public final class LettuceChat {
 
     // ---------- Discord join / switch / leave ----------
 
-    private void loadWebhook() {
+    /** Reads the webhook URL file. Returns a one-line status for the console / command. */
+    private String loadWebhook() {
         try {
-            if (!Files.exists(WEBHOOK_FILE)) {
-                Files.createDirectories(WEBHOOK_FILE.getParent());
-                Files.writeString(WEBHOOK_FILE, "");
+            if (!Files.exists(webhookFile)) {
+                Files.createDirectories(webhookFile.getParent());
+                Files.writeString(webhookFile, "");
             }
-            webhook = Files.readString(WEBHOOK_FILE).trim();
-            if (webhook.startsWith("https://discord.com/api/webhooks/") || webhook.startsWith("https://discordapp.com/api/webhooks/")) {
-                log.info("LettuceChat: Discord join/leave messages on");
-            } else {
+            String found = "";
+            for (String line : Files.readAllLines(webhookFile, StandardCharsets.UTF_8)) {
+                // tolerate a BOM, stray quotes/spaces and # comments from editing the file by hand
+                String s = line.replace("﻿", "").replace("​", "").trim();
+                if (s.length() >= 2 && (s.startsWith("\"") && s.endsWith("\"") || s.startsWith("'") && s.endsWith("'")))
+                    s = s.substring(1, s.length() - 1).trim();
+                if (s.isEmpty() || s.startsWith("#")) continue;
+                found = s;
+                break;
+            }
+            String status;
+            if (found.isEmpty()) {
                 webhook = "";
-                log.info("LettuceChat: put a Discord webhook URL in " + WEBHOOK_FILE + " to get join/leave messages");
+                status = "no webhook set. Put a Discord webhook URL in " + webhookFile.toAbsolutePath() + " then run /lettucechat reload";
+            } else if (!WEBHOOK_URL.matcher(found).matches()) {
+                webhook = "";
+                status = "the line in " + webhookFile.toAbsolutePath() + " doesn't look like a Discord webhook URL, Discord messages are OFF";
+                log.warning("LettuceChat: " + status);
+                return status;
+            } else {
+                webhook = found;
+                webhookFailing = false;
+                status = "Discord join/switch/leave messages ON";
             }
+            log.info("LettuceChat: " + status);
+            return status;
         } catch (Exception e) {
-            log.warning("LettuceChat could not read " + WEBHOOK_FILE + ": " + e);
+            log.warning("LettuceChat could not read " + webhookFile + ": " + e);
+            return "could not read " + webhookFile + ": " + e;
         }
     }
 
@@ -139,7 +197,10 @@ public final class LettuceChat {
         try {
             Player p = event.getPlayer();
             String to = event.getServer().getServerInfo().getName();
-            boolean first = online.add(p.getUniqueId());
+            // first server of the session = a join. Uses Velocity's own previous-server info so a stale entry
+            // in our set can't turn a join into a "went to" (or the other way round).
+            boolean first = event.getPreviousServer().isEmpty();
+            online.add(p.getUniqueId());
             String tag = NAMES.getOrDefault(to.toLowerCase(), "&7" + to);
             if (first) {
                 post(p, p.getUsername() + " joined the server", 0x57F287);
@@ -234,18 +295,91 @@ public final class LettuceChat {
 
     private void post(Player p, String text, int color) {
         if (webhook.isEmpty()) return;
-        String icon = "https://mc-heads.net/avatar/" + p.getUniqueId() + "/64";
-        String json = "{\"username\":\"Lettuce MC\",\"allowed_mentions\":{\"parse\":[]},"
+        try {
+            String json = embed(text, color, "https://mc-heads.net/avatar/" + p.getUniqueId() + "/64");
+            discord.execute(() -> deliver(json));
+        } catch (Throwable t) {
+            log.warning("LettuceChat could not queue a Discord message: " + t);
+        }
+    }
+
+    private static String embed(String text, int color, String icon) {
+        return "{\"username\":\"Lettuce MC\",\"allowed_mentions\":{\"parse\":[]},"
                 + "\"embeds\":[{\"color\":" + color + ",\"author\":{\"name\":" + quote(text)
-                + ",\"icon_url\":" + quote(icon) + "}}]}";
-        HttpRequest req = HttpRequest.newBuilder(URI.create(webhook))
+                + ",\"icon_url\":" + quote(icon) + "},\"timestamp\":" + quote(Instant.now().toString()) + "}]}";
+    }
+
+    /**
+     * Sends one webhook message, retrying network errors, Discord 5xx and rate limits.
+     * Runs on the Discord thread. Returns a short result for /lettucechat test.
+     */
+    private String deliver(String json) {
+        String url = webhook;
+        if (url.isEmpty()) return "no webhook set";
+        URI uri;
+        try {
+            uri = URI.create(url + (url.contains("?") ? "&" : "?") + "wait=true"); // makes Discord report real errors
+        } catch (IllegalArgumentException e) {
+            return fail("webhook URL is malformed: " + e.getMessage());
+        }
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(15))
                 .header("Content-Type", "application/json")
+                .header("User-Agent", USER_AGENT)
                 .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
                 .build();
-        http.sendAsync(req, HttpResponse.BodyHandlers.discarding()).whenComplete((res, err) -> {
-            if (err != null) log.warning("LettuceChat webhook failed: " + err);
-            else if (res.statusCode() >= 300) log.warning("LettuceChat webhook got HTTP " + res.statusCode());
-        });
+        String last = "";
+        for (int attempt = 1; attempt <= 4; attempt++) {
+            try {
+                HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString());
+                int code = res.statusCode();
+                if (code >= 200 && code < 300) {
+                    if (webhookFailing) log.info("LettuceChat: Discord webhook is working again");
+                    webhookFailing = false;
+                    return "OK (HTTP " + code + ")";
+                }
+                last = "HTTP " + code + " " + shorten(res.body());
+                if (code == 429) { sleep(retryAfterMs(res)); continue; }
+                if (code >= 500) { sleep(1000L * attempt); continue; }
+                String hint = (code == 401 || code == 404)
+                        ? " (that webhook was deleted or the URL is wrong. Make a new one in Discord, put it in "
+                          + webhookFile + ", then /lettucechat reload)"
+                        : (code == 403 ? " (blocked by Discord/Cloudflare, check the proxy's outbound IP)" : "");
+                return fail(last + hint);
+            } catch (IOException e) {
+                last = e.getClass().getSimpleName() + ": " + e.getMessage();
+                sleep(1000L * attempt);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return fail("interrupted");
+            }
+        }
+        return fail("gave up after 4 tries, last error: " + last);
+    }
+
+    private String fail(String why) {
+        webhookFailing = true;
+        log.warning("LettuceChat Discord webhook failed: " + why);
+        return "FAILED: " + why;
+    }
+
+    private static long retryAfterMs(HttpResponse<?> res) {
+        try {
+            double s = Double.parseDouble(res.headers().firstValue("Retry-After").orElse("1"));
+            return Math.min(10_000L, Math.max(250L, (long) (s * 1000)));
+        } catch (NumberFormatException e) {
+            return 1000L;
+        }
+    }
+
+    private static void sleep(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    }
+
+    private static String shorten(String body) {
+        if (body == null) return "";
+        body = body.replaceAll("\\s+", " ").trim();
+        return body.length() > 200 ? body.substring(0, 200) + "..." : body;
     }
 
     static String quote(String s) {
@@ -339,6 +473,42 @@ public final class LettuceChat {
                 tell(src, "&aUnmuted &f" + target + "&a.");
             }
             log.info((src instanceof Player pl ? pl.getUsername() : "Console") + " ran " + (mute ? "mute " : "unmute ") + String.join(" ", args));
+        }
+    }
+
+    /** /lettucechat reload | test | status. Console can always run it. */
+    private final class AdminCommand implements SimpleCommand {
+        @Override
+        public boolean hasPermission(Invocation inv) {
+            return inv.source().hasPermission("lettucechat.admin");
+        }
+
+        @Override
+        public java.util.List<String> suggest(Invocation inv) {
+            return java.util.List.of("reload", "test", "status");
+        }
+
+        @Override
+        public void execute(Invocation inv) {
+            CommandSource src = inv.source();
+            String sub = inv.arguments().length > 0 ? inv.arguments()[0].toLowerCase() : "status";
+            switch (sub) {
+                case "reload" -> tell(src, "&aLettuceChat: &f" + loadWebhook());
+                case "test" -> {
+                    if (webhook.isEmpty()) { tell(src, "&cNo working webhook loaded. &7" + loadWebhook()); return; }
+                    String who = src instanceof Player pl ? pl.getUsername() : "Console";
+                    String icon = src instanceof Player pl
+                            ? "https://mc-heads.net/avatar/" + pl.getUniqueId() + "/64"
+                            : "https://mc-heads.net/avatar/MHF_Question/64";
+                    String json = embed("Test message from LettuceChat " + VERSION + " (sent by " + who + ")", 0xFEE75C, icon);
+                    tell(src, "&7Sending a test message to Discord...");
+                    CompletableFuture.supplyAsync(() -> deliver(json), discord)
+                            .thenAccept(r -> tell(src, (r.startsWith("OK") ? "&a" : "&c") + "Discord: &f" + r));
+                }
+                default -> tell(src, "&aLettuceChat " + VERSION + "&7: webhook "
+                        + (webhook.isEmpty() ? "&cnot loaded" : webhookFailing ? "&eloaded, last send FAILED" : "&aloaded")
+                        + "&7 (" + webhookFile + "). &f/lettucechat reload | test");
+            }
         }
     }
 
