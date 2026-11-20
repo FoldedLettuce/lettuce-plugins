@@ -206,7 +206,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             return;
         }
         if (!party.everyone) party.broadcast("§e" + p.getName() + " §7" + (quit ? "disconnected and left" : "left") + " the party.");
-        if (party.members.size() < plugin.minPlayers()) cancelCountdown(party, "§cStart cancelled, not enough players.");
+        if (party.activeCount() < plugin.minPlayers()) cancelCountdown(party, "§cStart cancelled, not enough players.");
         if (party.leader.equals(id)) {
             party.leader = party.members.iterator().next();
             if (!party.everyone) party.broadcast("§e" + party.leaderName() + " §7is the new party leader.");
@@ -320,12 +320,16 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             return;
         }
         UUID id = p.getUniqueId();
+        if (Party.sittingOut(id)) {
+            Msg.send(p, Msg.PARTY, "§cYou're sitting out. §7Stop sitting out first to ready up. §e/p sitout");
+            return;
+        }
         boolean nowReady = !party.ready.remove(id);
         if (nowReady) party.ready.add(id);
         p.playSound(p.getLocation(), "minecraft:ui.button.click", 0.6f, nowReady ? 1.6f : 0.8f);
 
         party.broadcast((nowReady ? "§a" + p.getName() + " is ready!" : "§c" + p.getName() + " is no longer ready.")
-                + " §7(" + party.ready.size() + "/" + party.members.size() + ")");
+                + " §7(" + party.ready.size() + "/" + party.activeCount() + ")");
 
         if (party.everyone) {
             // parties off: the first ready starts a countdown, whoever's ready when it hits 0 plays
@@ -350,7 +354,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
         for (Player m : party.online()) plugin.lobbyItems(m);
         plugin.menus().refreshParty(party);
 
-        if (nowReady && party.allReady() && party.members.size() < plugin.minPlayers()) {
+        if (nowReady && party.allReady() && party.activeCount() < plugin.minPlayers()) {
             Msg.tellraw(p, "[" + Msg.plain("You need at least " + plugin.minPlayers() + " players to start. ", "red") + ","
                     + Msg.suggest("[Invite someone]", "yellow", "/p invite ", "Fills in /p invite") + "]");
             return;
@@ -364,7 +368,46 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             return;
         }
         if (party.inGame() || party.countdown != null) return;
-        if (party.allReady() && party.members.size() >= plugin.minPlayers()) startCountdown(party);
+        if (party.allReady() && party.activeCount() >= plugin.minPlayers()) startCountdown(party);
+    }
+
+    /** Sit out of games (you join as a spectator when everyone readies up) until you toggle it off. Sticks across games. */
+    public void toggleSitOut(Player p) {
+        Party party = get(p);
+        if (party == null) party = create(p);
+        UUID id = p.getUniqueId();
+        boolean nowOut = Party.SIT_OUT.add(id);
+        if (!nowOut) Party.SIT_OUT.remove(id);
+        p.playSound(p.getLocation(), "minecraft:ui.button.click", 0.6f, nowOut ? 0.8f : 1.6f);
+
+        if (nowOut) {
+            party.ready.remove(id);
+            party.broadcast("§e" + p.getName() + " is sitting out. §7They'll spectate until they stop sitting out.");
+            if (party.inGame()) Msg.send(p, Msg.PARTY, "§7A game is running, use §e/spec §7to watch it.");
+        } else {
+            party.broadcast("§a" + p.getName() + " stopped sitting out, ready up to play!");
+        }
+        for (Player m : party.online()) plugin.lobbyItems(m);
+        plugin.menus().refreshParty(party);
+
+        if (party.inGame()) return;
+        if (party.everyone) {
+            if (party.countdown != null && party.ready.isEmpty()) cancelCountdown(party, "§cCountdown stopped, nobody's ready.");
+            else if (party.countdown != null && party.allReady() && party.countdownLeft > 5) {
+                party.countdownLeft = 5;
+                party.broadcast("§aEveryone's ready, starting in 5!");
+            }
+            return;
+        }
+        if (nowOut) {
+            if (party.countdown != null && party.activeCount() < plugin.minPlayers()) {
+                cancelCountdown(party, "§cStart cancelled, not enough players.");
+            } else {
+                checkReady(party);
+            }
+        } else {
+            cancelCountdown(party, "§cStart cancelled, " + p.getName() + " is back in and needs to ready up.");
+        }
     }
 
     public void forceStart(Player p) {
@@ -376,6 +419,10 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             return;
         }
         if (party.everyone) {
+            if (Party.sittingOut(p.getUniqueId())) {
+                Msg.send(p, Msg.PARTY, "§cYou're sitting out. §7Stop sitting out first. §e/p sitout");
+                return;
+            }
             party.ready.add(p.getUniqueId());
             if (party.ready.size() < plugin.minPlayers() && !p.hasPermission("lettucegames.admin")) {
                 Msg.send(p, Msg.SYS, "§cAt least " + plugin.minPlayers() + " people need to be ready.");
@@ -388,7 +435,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             return;
         }
         if (party.countdown != null) return;
-        if (party.members.size() < plugin.minPlayers() && !p.hasPermission("lettucegames.admin")) {
+        if (party.activeCount() < plugin.minPlayers() && !p.hasPermission("lettucegames.admin")) {
             Msg.send(p, Msg.PARTY, "§cYou need at least " + plugin.minPlayers() + " players to start.");
             return;
         }
@@ -464,6 +511,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
         p.sendMessage("§f/p lead <name> §7: Hand off leader §8(leader)");
         p.sendMessage("§f/p disband §7: Kill the party §8(leader)");
         p.sendMessage("§f/p ready §7: Ready up, game starts when everyone's ready");
+        p.sendMessage("§f/p sitout §7: Sit out, you spectate every game until you toggle it off");
         p.sendMessage("§f/p start §7: Force start §8(leader)");
         p.sendMessage("§f/pc <msg> §7: Party chat");
         p.sendMessage("§7Nether Star = party menu, Comparator = game settings (leader changes them).");
@@ -479,6 +527,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             String sub0 = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
             switch (sub0) {
                 case "ready" -> toggleReady(p);
+                case "sitout", "sit", "spectate" -> toggleSitOut(p);
                 case "start" -> forceStart(p);
                 case "menu", "settings" -> plugin.menus().openGame(p, Menus.Tab.SETTINGS);
                 default -> Msg.send(p, Msg.SYS, "Parties are off right now, everyone on the Games server plays together. "
@@ -522,6 +571,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
             }
             case "disband" -> disband(p);
             case "ready" -> toggleReady(p);
+            case "sitout", "sit" -> toggleSitOut(p);
             case "start" -> forceStart(p);
             case "menu" -> plugin.menus().openParty(p);
             case "settings" -> plugin.menus().openGame(p, Menus.Tab.SETTINGS);
@@ -555,7 +605,7 @@ public class PartyManager implements CommandExecutor, TabCompleter {
         if (cmd.getName().equalsIgnoreCase("pc")) return out;
         if (args.length == 1) {
             for (String s : new String[]{"create", "invite", "accept", "deny", "join", "open", "close", "list", "leave",
-                    "kick", "lead", "disband", "ready", "start", "menu", "chat"}) {
+                    "kick", "lead", "disband", "ready", "sitout", "start", "menu", "chat"}) {
                 if (s.startsWith(args[0].toLowerCase(Locale.ROOT))) out.add(s);
             }
         } else if (args.length == 2) {

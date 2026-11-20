@@ -73,9 +73,32 @@ public class Party {
         for (Player p : online()) p.sendMessage(prefix + text);
     }
 
+    /**
+     * Players sitting out. They don't need to ready up, don't count toward the minimum, and join every game as a
+     * spectator until they stop sitting out. Shared across parties and games, only cleared by toggling it off
+     * (or a server restart).
+     */
+    public static final Set<UUID> SIT_OUT = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    public static boolean sittingOut(UUID id) {
+        return SIT_OUT.contains(id);
+    }
+
+    /** Members who'll actually play (everyone except people sitting out). */
+    public int activeCount() {
+        int n = 0;
+        for (UUID id : members) if (!SIT_OUT.contains(id)) n++;
+        return n;
+    }
+
     public boolean allReady() {
-        for (UUID id : members) if (!ready.contains(id)) return false;
-        return !members.isEmpty();
+        int active = 0;
+        for (UUID id : members) {
+            if (SIT_OUT.contains(id)) continue;
+            if (!ready.contains(id)) return false;
+            active++;
+        }
+        return active > 0;
     }
 
     public boolean inGame() {

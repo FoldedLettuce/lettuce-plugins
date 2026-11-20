@@ -203,6 +203,7 @@ public class GameListener implements Listener {
             case "ready" -> plugin.parties().toggleReady(p);
             case "settings" -> plugin.menus().openGame(p, Menus.Tab.SETTINGS);
             case "spectate" -> plugin.spectate(p);
+            case "sitout" -> plugin.parties().toggleSitOut(p);
             case "leaderboard" -> plugin.menus().openLeaderboard(p, Stats.Board.WINS, "all");
             default -> {
             }

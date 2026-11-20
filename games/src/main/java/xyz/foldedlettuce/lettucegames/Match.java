@@ -110,6 +110,7 @@ public class Match {
         this.party = party;
         if (party.everyone) roster.addAll(party.ready);
         else roster.addAll(party.members);
+        roster.removeIf(Party::sittingOut);
         this.s = party.settings.copy();
         if (s.on(Setting.SURPRISE)) s.randomize();
         this.mode = s.mode;
@@ -321,7 +322,7 @@ public class Match {
         List<Player> players = new ArrayList<>();
         for (UUID id : roster) {
             Player p = Bukkit.getPlayer(id);
-            if (p != null && plugin.matchFor(p.getWorld()) == null) players.add(p);
+            if (p != null && !Party.sittingOut(id) && plugin.matchFor(p.getWorld()) == null) players.add(p);
         }
         if (players.isEmpty()) {
             loading = false;
@@ -416,6 +417,10 @@ public class Match {
                 } catch (Throwable ignored) {
                 }
             }
+        }
+        // anyone sitting out drops in as a spectator
+        for (Player p : party.online()) {
+            if (Party.sittingOut(p.getUniqueId()) && plugin.matchFor(p.getWorld()) == null) addSpectator(p);
         }
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (world != null) world.removePluginChunkTickets(plugin);

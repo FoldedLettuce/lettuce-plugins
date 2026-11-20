@@ -64,6 +64,15 @@ public class Menus implements Listener {
 
     // ------------------------------------------------------------------ item helpers
 
+    /** Toggle button for sitting out of games (join as a spectator until you stop). */
+    static ItemStack sitOutItem(Player v) {
+        boolean out = Party.sittingOut(v.getUniqueId());
+        return item(out ? Material.RED_BED : Material.WHITE_BED, out ? "§e§lSitting Out" : "§f§lSit Out",
+                "§7Sit out and you'll join every game", "§7as a spectator, even after it ends,",
+                "§7until you stop sitting out.", "",
+                out ? "§aClick to stop sitting out" : "§eClick to sit out");
+    }
+
     public static ItemStack item(Material m, String name, List<String> lore) {
         ItemStack it = new ItemStack(m);
         ItemMeta meta = it.getItemMeta();
@@ -340,7 +349,7 @@ public class Menus implements Listener {
         List<String> info = new ArrayList<>();
         info.add("§7Leader: §6" + party.leaderName());
         info.add("§7Members: §f" + party.members.size());
-        info.add("§7Ready: §f" + party.ready.size() + "/" + party.members.size());
+        info.add("§7Ready: §f" + party.ready.size() + "/" + party.activeCount());
         info.add("§7Type: " + (party.open ? "§aPublic" : "§eInvite only"));
         if (party.inGame()) info.add("§eGame in progress");
         set(m, 4, item(Material.NAME_TAG, "§d§lYour Party", info), null);
@@ -353,7 +362,7 @@ public class Menus implements Listener {
             String n = p == null ? "?" : p.getName();
             boolean ready = party.ready.contains(id);
             List<String> lore = new ArrayList<>();
-            lore.add(ready ? "§a✔ Ready" : "§c✖ Not ready");
+            lore.add(Party.sittingOut(id) ? "§e⏸ Sitting out" : ready ? "§a✔ Ready" : "§c✖ Not ready");
             TeamColor t = party.teams.get(id);
             lore.add("§7Team: " + (t == null ? "§fNone" : t.code + t.display));
             if (leader && !id.equals(v.getUniqueId())) {
@@ -374,10 +383,11 @@ public class Menus implements Listener {
         } else {
             boolean ready = party.ready.contains(v.getUniqueId());
             set(m, 49, item(ready ? Material.LIME_DYE : Material.GRAY_DYE, ready ? "§a§lReady!" : "§c§lNot Ready",
-                    "§7Ready: §f" + party.ready.size() + "/" + party.members.size(),
+                    "§7Ready: §f" + party.ready.size() + "/" + party.activeCount(),
                     "§7Needs at least §f" + plugin.minPlayers() + " §7players.", "",
                     ready ? "§eClick to unready" : "§aClick to ready up"), "ready");
         }
+        set(m, 50, sitOutItem(v), "sitout");
         set(m, 51, item(Material.COMPARATOR, "§6§lGame Settings", "§7Map, settings, twists, teams, presets.", "", "§eClick to open"), "game");
         set(m, 53, item(Material.BARRIER, leader ? "§c§lDisband Party" : "§c§lLeave Party",
                 leader ? "§7Shift-click to disband" : "§7Click to leave"), "leave");
@@ -447,9 +457,10 @@ public class Menus implements Listener {
         } else {
             boolean ready = party.ready.contains(v.getUniqueId());
             set(m, 49, item(ready ? Material.LIME_DYE : Material.GRAY_DYE, ready ? "§a§lReady!" : "§c§lNot Ready",
-                    "§7Ready: §f" + party.ready.size() + "/" + party.members.size(), "",
+                    "§7Ready: §f" + party.ready.size() + "/" + party.activeCount(), "",
                     ready ? "§eClick to unready" : "§aClick to ready up"), "ready");
         }
+        set(m, 50, sitOutItem(v), "sitout");
         if (leader && m.tab != Tab.TEAMS) {
             set(m, 51, item(Material.TNT_MINECART, "§c§lReset " + (m.tab == Tab.TWISTS ? "Twists" : "Settings"),
                     "§7Shift-click to put this tab", "§7back to defaults."), "reset");
@@ -791,6 +802,7 @@ public class Menus implements Listener {
             case "potions" -> open(p, Type.POTIONS, party, null);
             case "spectate" -> { p.closeInventory(); plugin.spectate(p); }
             case "ready" -> plugin.parties().toggleReady(p);
+            case "sitout" -> plugin.parties().toggleSitOut(p);
             case "open" -> {
                 if (!leader) { notLeader(p, party); return; }
                 plugin.parties().setOpen(p, !party.open);

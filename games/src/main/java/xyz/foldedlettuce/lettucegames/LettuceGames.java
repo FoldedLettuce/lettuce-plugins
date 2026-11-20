@@ -264,6 +264,7 @@ public class LettuceGames extends JavaPlugin {
             case LIME_DYE, GRAY_DYE -> "ready";
             case COMPARATOR -> "settings";
             case ENDER_EYE -> "spectate";
+            case RED_BED, WHITE_BED -> "sitout";
             case GOLD_INGOT -> "leaderboard";
             default -> null;
         };
@@ -275,7 +276,7 @@ public class LettuceGames extends JavaPlugin {
         // only touch slots that need it so the hotbar doesn't flicker
         int lbSlot = parties.enabled() ? 1 : 0;
         for (int i = 0; i < inv.getSize(); i++) {
-            if (i == 0 || i == 4 || i == 8 || i == lbSlot) continue;
+            if (i == 0 || i == 4 || i == 5 || i == 8 || i == lbSlot) continue;
             ItemStack it = inv.getItem(i);
             if (it != null && it.getType() != Material.AIR) inv.setItem(i, null);
         }
@@ -288,14 +289,21 @@ public class LettuceGames extends JavaPlugin {
             inv.setItem(0, null);
         }
         boolean ready = party != null && party.ready.contains(p.getUniqueId());
+        boolean out = Party.sittingOut(p.getUniqueId());
         if (party != null && party.inGame()) {
             inv.setItem(4, Menus.item(Material.ENDER_EYE, "§b§lSpectate §7(Right-click)", "§7Your party's game is running."));
+        } else if (out) {
+            inv.setItem(4, Menus.item(Material.GRAY_DYE, "§8§lSitting Out",
+                    "§7You'll spectate the next game.", "§7Stop sitting out to ready up."));
         } else {
             inv.setItem(4, Menus.item(ready ? Material.LIME_DYE : Material.GRAY_DYE,
                     ready ? "§a§lReady! §7(Right-click to unready)" : "§c§lNot Ready §7(Right-click to ready up)",
                     "§7The game starts when everyone", "§7in your party is ready.",
                     "§7Needs at least §f" + minPlayers() + " §7players."));
         }
+        inv.setItem(5, Menus.item(out ? Material.RED_BED : Material.WHITE_BED,
+                out ? "§e§lSitting Out §7(Right-click to rejoin)" : "§f§lSit Out §7(Right-click)",
+                "§7Spectate games instead of playing.", "§7Stays on until you turn it off."));
         inv.setItem(lbSlot, Menus.item(Material.GOLD_INGOT, "§6§lLeaderboards §7(Right-click)",
                 "§7Top players by wins, kills and more.", "§e/stats §7for your own."));
         inv.setItem(8, Menus.item(Material.COMPARATOR, "§6§lGame Settings §7(Right-click)",
