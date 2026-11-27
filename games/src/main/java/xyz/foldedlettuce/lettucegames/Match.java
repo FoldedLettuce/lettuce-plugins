@@ -3553,6 +3553,7 @@ public class Match {
             if (w == null) continue;
             File f = w.getWorldFolder();
             if (Bukkit.unloadWorld(w, false)) folders.add(f);
+            else plugin.getLogger().warning("Couldn't unload game world " + w.getName() + " (" + w.getPlayers().size() + " players in it)");
         }
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
             for (File f : folders) plugin.deleteFolder(f);

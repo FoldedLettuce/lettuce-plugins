@@ -4,7 +4,7 @@ Minigames plugin for the Lettuce MC Games server (Paper 26.3). It recreates mcma
 
 **Modes:** Random Items Challenge, Death Swap, Block Shuffle, Manhunt, Hitman, Speedrun, Bingo, Death Shuffle
 
-**Current version:** 2.17.0
+**Current version:** 2.22.0
 
 ## Building
 
@@ -30,4 +30,4 @@ Releases before this repo were compiled against hand-written API stubs, because 
 
 ## Commands
 
-`/lg` (admin: setlobby, list, end, reload, pool, maps, hologram), `/track`, `/spec`, `/specmode`, `/leave`, `/blacklist`, `/pick`, `/skip`, `/bingocard`, `/stats`, `/leaderboard`
+`/lg` (admin: setlobby, list, end, reload, pool, maps, memory, hologram), `/track`, `/spec`, `/specmode`, `/leave`, `/blacklist`, `/pick`, `/skip`, `/bingocard`, `/stats`, `/leaderboard`

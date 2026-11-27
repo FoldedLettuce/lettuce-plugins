@@ -48,6 +48,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.PortalCreateEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
@@ -429,7 +430,16 @@ public class GameListener implements Listener {
     private final java.util.List<Zone> zones = new java.util.ArrayList<>();
 
     private void allowAt(Location l) {
+        // prune here too, otherwise expired zones sit around until the next item spawn check
+        long now = System.currentTimeMillis();
+        zones.removeIf(z -> z.until < now);
         zones.add(new Zone(l, 400));
+    }
+
+    /** Zones hold their world directly, so they have to go when it unloads or it can't be freed. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWorldUnload(WorldUnloadEvent e) {
+        zones.removeIf(z -> z.w.equals(e.getWorld()));
     }
 
     private boolean inZone(Location l) {

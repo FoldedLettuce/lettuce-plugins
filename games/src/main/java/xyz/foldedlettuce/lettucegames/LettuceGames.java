@@ -29,6 +29,7 @@ public class LettuceGames extends JavaPlugin {
     private final List<Match> matches = new ArrayList<>();
     private MapPool maps;
     private Stats stats;
+    private WorldWatch worldWatch;
     /** set while the plugin itself drops items, so the World Loot filter lets them through */
     public boolean allowItemSpawn = false;
 
@@ -36,6 +37,9 @@ public class LettuceGames extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         Match.clearNoPushTeam();
+        // registered first so it sees every world unload, including ones during startup
+        worldWatch = new WorldWatch(this);
+        worldWatch.start();
         maps = new MapPool(this);
         cleanupOldWorlds(maps.savedNames());
         // after the server's up: load saved maps one at a time, then top up
@@ -462,6 +466,7 @@ public class LettuceGames extends JavaPlugin {
                     s.sendMessage("§cUnknown leaderboard " + args[1]);
                 }
             }
+            case "memory" -> worldWatch.report(s, args.length > 1 && args[1].equalsIgnoreCase("gc"));
             case "maps" -> s.sendMessage("§7Ready maps: §f" + maps.readyCount() + "/" + maps.target()
                     + (maps.isGenerating() ? " §e(making one now)" : ""));
             case "list" -> {
@@ -503,6 +508,7 @@ public class LettuceGames extends JavaPlugin {
                 s.sendMessage("§f/lg reload §7- reload config.yml");
                 s.sendMessage("§f/lg pool §7- item pool sizes");
                 s.sendMessage("§f/lg maps §7- how many maps are ready");
+                s.sendMessage("§f/lg memory [gc] §7- unloaded worlds still in memory (gc = clean up first, brief freeze)");
                 s.sendMessage("§f/lg hologram <wins|kills|kd|...> §7- floating leaderboard where you stand");
                 s.sendMessage("§f/lg hologram remove §7- remove ones near you");
             }

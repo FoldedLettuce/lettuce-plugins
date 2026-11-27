@@ -51,6 +51,11 @@ public final class ChunkWork {
         }
         int[] next = {0};
         job.task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            // the world can be unloaded mid-job (game ended early), stop asking it for chunks
+            if (Bukkit.getWorld(w.getUID()) != w) {
+                job.task.cancel();
+                return;
+            }
             for (int k = 0; k < perTick && next[0] < chunks.size(); k++) {
                 int[] c = chunks.get(next[0]++);
                 w.getChunkAtAsync(c[0], c[1]).whenComplete((chunk, err) -> {
